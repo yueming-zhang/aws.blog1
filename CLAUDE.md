@@ -112,3 +112,7 @@ Example: `feat(agent): add AgentCore invoke handler`
 - Use the CloudWatch MCP server to query logs directly from Claude Code.
 - Log group convention: `/aws/<service>/<project>/<environment>`.
 - Use structured JSON logging with request IDs for traceability.
+
+## Examples to learn
+
+- This folder contains POC-type of implementation that works, but not ideal. Learn from it when necessary: /Users/mingyyzz/dev-workspace/ubuntu_poc/agent_core_deep_research/MultiServerMCPClient

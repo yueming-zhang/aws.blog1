@@ -56,6 +56,10 @@ async def main():
 
                 print(f"\nFound {len(tool_result.tools)} tools available.")
 
+                print("\nTesting add_numbers(3, 5)...")
+                result = await session.call_tool("add_numbers", {"a": 3, "b": 5})
+                print(f"Result: {result.content[0].text}")
+
     except Exception as e:
         print(f"Error connecting to MCP server: {e}")
         import traceback

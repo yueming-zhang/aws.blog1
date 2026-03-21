@@ -1,0 +1,31 @@
+default_agent: blog_mcp_math
+agents:
+  blog_mcp_math:
+    name: blog_mcp_math
+    entrypoint: /Users/mingyyzz/dev-local/aws.blog1/src/mcp_server.py
+    platform: linux/arm64
+    container_runtime: docker
+    aws:
+      execution_role: arn:aws:iam::980413094772:role/AmazonBedrockAgentCoreSDKRuntime-us-west-2-622e8ad068
+      execution_role_auto_create: false
+      account: '980413094772'
+      region: us-west-2
+      ecr_repository: 980413094772.dkr.ecr.us-west-2.amazonaws.com/bedrock-agentcore-blog_mcp_math
+      ecr_auto_create: false
+      network_configuration:
+        network_mode: PUBLIC
+      protocol_configuration:
+        server_protocol: MCP
+      observability:
+        enabled: true
+    bedrock_agentcore:
+      agent_id: blog_mcp_math-Z057Lr3Pdg
+      agent_arn: arn:aws:bedrock-agentcore:us-west-2:980413094772:runtime/blog_mcp_math-Z057Lr3Pdg
+      agent_session_id: null
+    codebuild:
+      project_name: bedrock-agentcore-blog_mcp_math-builder
+      execution_role: arn:aws:iam::980413094772:role/AmazonBedrockAgentCoreSDKCodeBuild-us-west-2-622e8ad068
+      source_bucket: bedrock-agentcore-codebuild-sources-980413094772-us-west-2
+    authorizer_configuration: null
+    request_header_configuration: null
+    oauth_configuration: null

@@ -66,6 +66,8 @@ def main() -> int:
         client.update_agent_runtime(
             agentRuntimeId=runtime_id,
             agentRuntimeArtifact=artifact,
+            roleArn=args.role_arn,
+            networkConfiguration={"networkMode": "PUBLIC"},
         )
     else:
         logger.info("Creating new runtime '%s'", args.agent_name)

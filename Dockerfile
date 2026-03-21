@@ -5,7 +5,10 @@ ENV UV_SYSTEM_PYTHON=1 \
     UV_COMPILE_BYTECODE=1 \
     UV_NO_PROGRESS=1 \
     PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app/src
+    PYTHONPATH=/app/src \
+    OTEL_SERVICE_NAME=math-mcp \
+    OTEL_PROPAGATORS=xray \
+    OTEL_PYTHON_ID_GENERATOR=xray
 
 COPY pyproject.toml .
 RUN uv pip install . && uv pip install "aws-opentelemetry-distro>=0.10.1"

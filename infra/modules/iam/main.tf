@@ -35,3 +35,22 @@ resource "aws_iam_role_policy" "logs" {
   role   = aws_iam_role.execution_role.id
   policy = data.aws_iam_policy_document.logs.json
 }
+
+data "aws_iam_policy_document" "xray" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "xray:PutTraceSegments",
+      "xray:PutTelemetryRecords",
+      "xray:GetSamplingRules",
+      "xray:GetSamplingTargets",
+    ]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_role_policy" "xray" {
+  name   = "xray-tracing"
+  role   = aws_iam_role.execution_role.id
+  policy = data.aws_iam_policy_document.xray.json
+}

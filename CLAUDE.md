@@ -92,8 +92,7 @@ project/
 ### Branch Strategy
 
 - `main` — production-ready, deploy on merge.
-- `dev` — integration branch.
-- Feature branches: `feature/<description>` from `dev`.
+- Feature branches: `feature/<description>` from `main`.
 
 ### Pre-Push Checklist
 

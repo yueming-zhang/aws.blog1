@@ -10,32 +10,35 @@ mcp = FastMCP(host="0.0.0.0", stateless_http=True)
 
 
 @mcp.tool()
-def get_session_info() -> str:
-    """Return server instance ID and a unique per-request ID to demonstrate session isolation"""
-    request_id = str(uuid.uuid4())
-    return f"server={SERVER_INSTANCE_ID} request={request_id}"
-
-
-@mcp.tool()
-def add_numbers_sync(a: int, b: int) -> int:
+def add_numbers_sync(a: int, b: int) -> str:
     """Add two numbers together (sync)"""
     print(f"Adding numbers (sync): {a} + {b}")
-    result = a + b
-    time.sleep(2)
-    return result
+    tracer = trace.get_tracer("math_mcp", "1.0.0")
+    with tracer.start_as_current_span("math_mcp_add_numbers_sync") as span:
+        span.add_event("add_numbers_start", {"a": a, "b": b})
+        result = a + b
+        time.sleep(2)
+        span.add_event("add_numbers_end", {"result": result})
+        span.set_status(trace.Status(trace.StatusCode.OK))
+    return f"result={result} server={SERVER_INSTANCE_ID}"
 
 
 @mcp.tool()
-async def add_numbers_async(a: int, b: int) -> int:
+async def add_numbers_async(a: int, b: int) -> str:
     """Add two numbers together (async)"""
     print(f"Adding numbers (async): {a} + {b}")
-    result = a + b
-    await asyncio.sleep(2)
-    return result
+    tracer = trace.get_tracer("math_mcp", "1.0.0")
+    with tracer.start_as_current_span("math_mcp_add_numbers_async") as span:
+        span.add_event("add_numbers_start", {"a": a, "b": b})
+        result = a + b
+        await asyncio.sleep(2)
+        span.add_event("add_numbers_end", {"result": result})
+        span.set_status(trace.Status(trace.StatusCode.OK))
+    return f"result={result} server={SERVER_INSTANCE_ID}"
 
 
 @mcp.tool()
-def multiply_numbers_sync(a: int, b: int) -> int:
+def multiply_numbers_sync(a: int, b: int) -> str:
     """Multiply two numbers together (sync)"""
     print(f"Multiplying numbers (sync): {a} * {b}")
     tracer = trace.get_tracer("math_mcp", "1.0.0")
@@ -45,11 +48,11 @@ def multiply_numbers_sync(a: int, b: int) -> int:
         time.sleep(2)
         span.add_event("multiply_numbers_end", {"result": result})
         span.set_status(trace.Status(trace.StatusCode.OK))
-    return result
+    return f"result={result} server={SERVER_INSTANCE_ID}"
 
 
 @mcp.tool()
-async def multiply_numbers_async(a: int, b: int) -> int:
+async def multiply_numbers_async(a: int, b: int) -> str:
     """Multiply two numbers together (async)"""
     print(f"Multiplying numbers (async): {a} * {b}")
     tracer = trace.get_tracer("math_mcp", "1.0.0")
@@ -59,7 +62,7 @@ async def multiply_numbers_async(a: int, b: int) -> int:
         await asyncio.sleep(2)
         span.add_event("multiply_numbers_end", {"result": result})
         span.set_status(trace.Status(trace.StatusCode.OK))
-    return result
+    return f"result={result} server={SERVER_INSTANCE_ID}"
 
 
 @mcp.tool()
@@ -73,7 +76,7 @@ def greet_user(name: str) -> str:
         time.sleep(2)
         span.add_event("greet_user_end", {"greeting": greeting})
         span.set_status(trace.Status(trace.StatusCode.OK))
-    return greeting
+    return f"result={greeting} server={SERVER_INSTANCE_ID}"
 
 
 if __name__ == "__main__":

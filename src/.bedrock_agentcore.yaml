@@ -2,9 +2,14 @@ default_agent: blog_mcp_math
 agents:
   blog_mcp_math:
     name: blog_mcp_math
+    language: python
+    node_version: null
     entrypoint: /Users/mingyyzz/dev-local/aws.blog1/src/mcp_server.py
+    deployment_type: container
+    runtime_type: null
     platform: linux/arm64
     container_runtime: docker
+    source_path: null
     aws:
       execution_role: arn:aws:iam::980413094772:role/AmazonBedrockAgentCoreSDKRuntime-us-west-2-622e8ad068
       execution_role_auto_create: false
@@ -12,12 +17,18 @@ agents:
       region: us-west-2
       ecr_repository: 980413094772.dkr.ecr.us-west-2.amazonaws.com/bedrock-agentcore-blog_mcp_math
       ecr_auto_create: false
+      s3_path: null
+      s3_auto_create: false
       network_configuration:
         network_mode: PUBLIC
+        network_mode_config: null
       protocol_configuration:
         server_protocol: MCP
       observability:
         enabled: true
+      lifecycle_configuration:
+        idle_runtime_session_timeout: null
+        max_lifetime: null
     bedrock_agentcore:
       agent_id: blog_mcp_math-Z057Lr3Pdg
       agent_arn: arn:aws:bedrock-agentcore:us-west-2:980413094772:runtime/blog_mcp_math-Z057Lr3Pdg
@@ -26,6 +37,26 @@ agents:
       project_name: bedrock-agentcore-blog_mcp_math-builder
       execution_role: arn:aws:iam::980413094772:role/AmazonBedrockAgentCoreSDKCodeBuild-us-west-2-622e8ad068
       source_bucket: bedrock-agentcore-codebuild-sources-980413094772-us-west-2
+    memory:
+      mode: NO_MEMORY
+      memory_id: null
+      memory_arn: null
+      memory_name: null
+      event_expiry_days: 30
+      first_invoke_memory_check_done: false
+      was_created_by_toolkit: false
+    identity:
+      credential_providers: []
+      workload: null
+    aws_jwt:
+      enabled: false
+      audiences: []
+      signing_algorithm: ES384
+      issuer_url: null
+      duration_seconds: 300
     authorizer_configuration: null
     request_header_configuration: null
     oauth_configuration: null
+    api_key_env_var_name: null
+    api_key_credential_provider_name: null
+    is_generated_by_agentcore_create: false

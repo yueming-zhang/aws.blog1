@@ -3,6 +3,7 @@ logging.getLogger("mcp.client.streamable_http").setLevel(logging.ERROR)
 
 import asyncio
 import time
+from datetime import datetime
 import uuid
 import argparse
 import boto3
@@ -38,16 +39,19 @@ def parse_response(text: str) -> tuple[str, str]:
     return parts["result"], parts["server"]
 
 
-async def call_tool_once(mcp_url: str, region: str, tool: str, call_id: int, session_id: str | None = None) -> tuple[float, str]:
+async def call_tool_once(mcp_url: str, region: str, tool: str, call_id: int, session_id: str | None = None) -> tuple[float, float, float, str]:
+    start_time = datetime.now()
     start = time.perf_counter()
     async with create_transport(mcp_url, region, session_id=session_id) as (read_stream, write_stream, _):
         async with ClientSession(read_stream, write_stream) as session:
             await session.initialize()
             result = await session.call_tool(tool, {"a": call_id, "b": call_id})
-    duration = time.perf_counter() - start
-    value, server_id = parse_response(result.content[0].text)
-    print(f"  [{tool}] call {call_id:>2}: {duration:.2f}s  value={value}  server={server_id}")
-    return duration, server_id
+    end = time.perf_counter()
+    end_time = datetime.now()
+    duration = end - start
+    _, server_id = parse_response(result.content[0].text)
+    print(f"  {tool} #{call_id:<3} start={start_time:%H:%M:%S}, end={end_time:%H:%M:%S}, duration={duration:>6.2f}s, server={server_id}", flush=True)
+    return start, end, duration, server_id
 
 
 async def run(tool: str, num_calls: int, shared_session: bool):
@@ -56,13 +60,12 @@ async def run(tool: str, num_calls: int, shared_session: bool):
     session_label = f"shared Mcp-Session-Id={session_id}" if shared_session else "unique sessions"
 
     print(f"\n{tool} — {num_calls} concurrent calls, {session_label}")
-    start = time.perf_counter()
     results = await asyncio.gather(*[
         call_tool_once(mcp_url, region, tool, i, session_id=session_id) for i in range(num_calls)
     ])
-    total = time.perf_counter() - start
-    durations, server_ids = zip(*results)
-    print(f"  total wall time: {total:.2f}s  avg per call: {sum(durations)/len(durations):.2f}s")
+    starts, ends, durations, server_ids = zip(*results)
+    wall_time = max(ends) - min(starts)
+    print(f"  total wall time: {wall_time:.2f}s  avg per call: {sum(durations)/len(durations):.2f}s")
     print(f"  unique server instances: {len(set(server_ids))}")
 
 

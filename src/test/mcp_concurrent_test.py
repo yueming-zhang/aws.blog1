@@ -34,6 +34,29 @@ def mcp_url_and_region():
     return get_mcp_url()
 
 
+async def call_session_info(mcp_url: str, region: str, call_id: int) -> str:
+    async with create_transport(mcp_url, region) as (read_stream, write_stream, _):
+        async with ClientSession(read_stream, write_stream) as session:
+            await session.initialize()
+            result = await session.call_tool("get_session_info", {})
+    text = result.content[0].text
+    print(f"  call {call_id:>2}: {text}")
+    return text
+
+
+async def test_sessions_are_independent(mcp_url_and_region):
+    mcp_url, region = mcp_url_and_region
+    print("\nget_session_info — 10 concurrent calls")
+    results = await asyncio.gather(*[
+        call_session_info(mcp_url, region, i) for i in range(10)
+    ])
+    request_ids = [r.split("request=")[1] for r in results]
+    server_ids = [r.split(" ")[0].split("server=")[1] for r in results]
+    print(f"\n  unique server instances: {len(set(server_ids))}")
+    print(f"  unique request IDs: {len(set(request_ids))}")
+    assert len(set(request_ids)) == 10, "Each call must have a unique request ID"
+
+
 async def call_tool_once(mcp_url: str, region: str, tool: str, call_id: int) -> float:
     start = time.perf_counter()
     async with create_transport(mcp_url, region) as (read_stream, write_stream, _):

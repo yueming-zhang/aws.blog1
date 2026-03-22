@@ -2,9 +2,18 @@ from mcp.server.fastmcp import FastMCP
 from opentelemetry import trace
 import time
 import asyncio
+import uuid
 
+SERVER_INSTANCE_ID = str(uuid.uuid4())
 
 mcp = FastMCP(host="0.0.0.0", stateless_http=True)
+
+
+@mcp.tool()
+def get_session_info() -> str:
+    """Return server instance ID and a unique per-request ID to demonstrate session isolation"""
+    request_id = str(uuid.uuid4())
+    return f"server={SERVER_INSTANCE_ID} request={request_id}"
 
 
 @mcp.tool()

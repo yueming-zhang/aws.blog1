@@ -4,7 +4,7 @@ agents:
     name: blog_mcp_math
     language: python
     node_version: null
-    entrypoint: /Users/mingyyzz/dev-local/aws.blog1/src/mcp_server.py
+    entrypoint: /Users/mingyyzz/dev-local/aws.blog1/src/mcp_server/mcp_server.py
     deployment_type: container
     runtime_type: null
     platform: linux/arm64

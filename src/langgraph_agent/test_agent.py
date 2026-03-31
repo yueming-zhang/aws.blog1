@@ -5,7 +5,6 @@ logging.getLogger("botocore").setLevel(logging.ERROR)
 
 import asyncio
 import time
-import json
 from datetime import datetime
 import uuid
 import argparse
@@ -59,7 +58,6 @@ async def call_agent_once(
     agent_url: str,
     region: str,
     call_id: int,
-    tool_mode: str = "async",
     session_id: str | None = None,
 ) -> tuple[float, float, float, str]:
     start_time = datetime.now()
@@ -72,7 +70,6 @@ async def call_agent_once(
 
     payload = {
         "prompt": f"add {call_id} and {call_id}",
-        "tool_mode": tool_mode,
     }
 
     async with httpx.AsyncClient(auth=auth, timeout=120) as client:
@@ -97,14 +94,14 @@ async def call_agent_once(
     return start, end, duration, server_id
 
 
-async def run(tool_mode: str, num_calls: int, shared_session: bool):
+async def run(num_calls: int, shared_session: bool):
     agent_url, region = get_agent_url()
     session_id = str(uuid.uuid4()) if shared_session else None
     session_label = f"shared session={session_id}" if shared_session else "unique sessions"
 
-    print(f"\nlanggraph agent ({tool_mode}) — {num_calls} concurrent calls, {session_label}")
+    print(f"\nlanggraph agent — {num_calls} concurrent calls, {session_label}")
     results = await asyncio.gather(*[
-        call_agent_once(agent_url, region, i, tool_mode=tool_mode, session_id=session_id)
+        call_agent_once(agent_url, region, i, session_id=session_id)
         for i in range(num_calls)
     ])
     starts, ends, durations, server_ids = zip(*results)
@@ -115,12 +112,11 @@ async def run(tool_mode: str, num_calls: int, shared_session: bool):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run concurrent LangGraph agent calls")
-    parser.add_argument("mode", choices=["sync", "async"], help="Tool variant to call")
     parser.add_argument("--calls", type=int, default=5, help="Number of concurrent calls (default: 5)")
     parser.add_argument("--session", choices=["unique", "shared"], default="unique", help="Session mode (default: unique)")
     args = parser.parse_args()
 
-    asyncio.run(run(args.mode, args.calls, shared_session=(args.session == "shared")))
+    asyncio.run(run(args.calls, shared_session=(args.session == "shared")))
 
-    # python test_agent.py async --calls 5 --session unique
-    # python test_agent.py sync --calls 5 --session shared
+    # python test_agent.py --calls 5 --session unique
+    # python test_agent.py --calls 5 --session shared

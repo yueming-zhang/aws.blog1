@@ -1,0 +1,7 @@
+langgraph>=1.0.2
+langchain>=1.0.3
+langchain_aws>=1.0.0
+bedrock-agentcore>=1.4.7
+bedrock-agentcore-starter-toolkit>=0.3.3
+boto3>=1.42.73
+httpx>=0.28.0

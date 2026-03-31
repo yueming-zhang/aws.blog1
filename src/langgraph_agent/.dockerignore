@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+.git/
+.gitignore
+.venv/
+*.ipynb
+*.pdf
+.bedrock_agentcore.yaml
+.DS_Store

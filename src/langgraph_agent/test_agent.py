@@ -6,7 +6,6 @@ logging.getLogger("botocore").setLevel(logging.ERROR)
 import asyncio
 import time
 from datetime import datetime
-import uuid
 import argparse
 
 import httpx
@@ -14,9 +13,6 @@ import boto3
 from boto3.session import Session
 from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
-
-
-SESSION_HEADER = "X-Amzn-Bedrock-AgentCore-Runtime-Session-Id"
 
 
 def get_agent_url():
@@ -58,19 +54,13 @@ async def call_agent_once(
     agent_url: str,
     region: str,
     call_id: int,
-    session_id: str | None = None,
 ) -> tuple[float, float, float, str]:
     start_time = datetime.now()
     start = time.perf_counter()
 
     auth = create_httpx_auth(region)
     headers = {"Content-Type": "application/json"}
-    if session_id:
-        headers[SESSION_HEADER] = session_id
-
-    payload = {
-        "prompt": f"add {call_id} and {call_id}",
-    }
+    payload = {"prompt": f"add {call_id} and {call_id}"}
 
     async with httpx.AsyncClient(auth=auth, timeout=120) as client:
         response = await client.post(agent_url, json=payload, headers=headers)
@@ -83,7 +73,6 @@ async def call_agent_once(
 
     server_id = body.get("server", "unknown")
     result_text = body.get("result", "")
-    # Truncate long LLM responses for display
     display_result = result_text[:80] + "..." if len(result_text) > 80 else result_text
 
     print(
@@ -94,22 +83,20 @@ async def call_agent_once(
     return start, end, duration, server_id
 
 
-async def delayed_call(agent_url, region, call_id, interval, session_id):
+async def delayed_call(agent_url, region, call_id, interval):
     """Wait (call_id * interval) seconds before making the call."""
     if interval > 0 and call_id > 0:
         await asyncio.sleep(call_id * interval)
-    return await call_agent_once(agent_url, region, call_id, session_id=session_id)
+    return await call_agent_once(agent_url, region, call_id)
 
 
-async def run(num_calls: int, shared_session: bool, interval: float = 0):
+async def run(num_calls: int, interval: float = 0):
     agent_url, region = get_agent_url()
-    session_id = str(uuid.uuid4()) if shared_session else None
-    session_label = f"shared session={session_id}" if shared_session else "unique sessions"
     interval_label = f", interval={interval}s" if interval > 0 else ""
 
-    print(f"\nlanggraph agent — {num_calls} calls, {session_label}{interval_label}")
+    print(f"\nlanggraph agent — {num_calls} calls{interval_label}")
     results = await asyncio.gather(*[
-        delayed_call(agent_url, region, i, interval, session_id=session_id)
+        delayed_call(agent_url, region, i, interval)
         for i in range(num_calls)
     ])
     starts, ends, durations, server_ids = zip(*results)
@@ -120,13 +107,11 @@ async def run(num_calls: int, shared_session: bool, interval: float = 0):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run concurrent LangGraph agent calls")
-    parser.add_argument("--calls", type=int, default=5, help="Number of calls (default: 5)")
-    parser.add_argument("--session", choices=["unique", "shared"], default="unique", help="Session mode (default: unique)")
+    parser.add_argument("--calls", type=int, default=1, help="Number of calls (default: 5)")
     parser.add_argument("--interval", type=float, default=0, help="Delay in seconds between each call (default: 0, all concurrent)")
     args = parser.parse_args()
 
-    asyncio.run(run(args.calls, shared_session=(args.session == "shared"), interval=args.interval))
+    asyncio.run(run(args.calls, interval=args.interval))
 
-    # python test_agent.py --calls 5 --session unique
-    # python test_agent.py --calls 5 --session shared
-    # python test_agent.py --calls 10 --interval 2 --session unique
+    # python test_agent.py --calls 5
+    # python test_agent.py --calls 10 --interval 2

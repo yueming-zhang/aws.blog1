@@ -94,14 +94,22 @@ async def call_agent_once(
     return start, end, duration, server_id
 
 
-async def run(num_calls: int, shared_session: bool):
+async def delayed_call(agent_url, region, call_id, interval, session_id):
+    """Wait (call_id * interval) seconds before making the call."""
+    if interval > 0 and call_id > 0:
+        await asyncio.sleep(call_id * interval)
+    return await call_agent_once(agent_url, region, call_id, session_id=session_id)
+
+
+async def run(num_calls: int, shared_session: bool, interval: float = 0):
     agent_url, region = get_agent_url()
     session_id = str(uuid.uuid4()) if shared_session else None
     session_label = f"shared session={session_id}" if shared_session else "unique sessions"
+    interval_label = f", interval={interval}s" if interval > 0 else ""
 
-    print(f"\nlanggraph agent — {num_calls} concurrent calls, {session_label}")
+    print(f"\nlanggraph agent — {num_calls} calls, {session_label}{interval_label}")
     results = await asyncio.gather(*[
-        call_agent_once(agent_url, region, i, session_id=session_id)
+        delayed_call(agent_url, region, i, interval, session_id=session_id)
         for i in range(num_calls)
     ])
     starts, ends, durations, server_ids = zip(*results)
@@ -112,11 +120,13 @@ async def run(num_calls: int, shared_session: bool):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run concurrent LangGraph agent calls")
-    parser.add_argument("--calls", type=int, default=5, help="Number of concurrent calls (default: 5)")
+    parser.add_argument("--calls", type=int, default=5, help="Number of calls (default: 5)")
     parser.add_argument("--session", choices=["unique", "shared"], default="unique", help="Session mode (default: unique)")
+    parser.add_argument("--interval", type=float, default=0, help="Delay in seconds between each call (default: 0, all concurrent)")
     args = parser.parse_args()
 
-    asyncio.run(run(args.calls, shared_session=(args.session == "shared")))
+    asyncio.run(run(args.calls, shared_session=(args.session == "shared"), interval=args.interval))
 
     # python test_agent.py --calls 5 --session unique
     # python test_agent.py --calls 5 --session shared
+    # python test_agent.py --calls 10 --interval 2 --session unique

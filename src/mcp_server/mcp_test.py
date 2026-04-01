@@ -54,14 +54,22 @@ async def call_tool_once(mcp_url: str, region: str, tool: str, call_id: int, ses
     return start, end, duration, server_id
 
 
-async def run(tool: str, num_calls: int, shared_session: bool):
+async def delayed_call(mcp_url, region, tool, call_id, interval, session_id):
+    """Wait (call_id * interval) seconds before making the call."""
+    if interval > 0 and call_id > 0:
+        await asyncio.sleep(call_id * interval)
+    return await call_tool_once(mcp_url, region, tool, call_id, session_id=session_id)
+
+
+async def run(tool: str, num_calls: int, shared_session: bool, interval: float = 0):
     mcp_url, region = get_mcp_url()
     session_id = str(uuid.uuid4()) if shared_session else None
     session_label = f"shared Mcp-Session-Id={session_id}" if shared_session else "unique sessions"
+    interval_label = f", interval={interval}s" if interval > 0 else ""
 
-    print(f"\n{tool} — {num_calls} concurrent calls, {session_label}")
+    print(f"\n{tool} — {num_calls} calls, {session_label}{interval_label}")
     results = await asyncio.gather(*[
-        call_tool_once(mcp_url, region, tool, i, session_id=session_id) for i in range(num_calls)
+        delayed_call(mcp_url, region, tool, i, interval, session_id=session_id) for i in range(num_calls)
     ])
     starts, ends, durations, server_ids = zip(*results)
     wall_time = max(ends) - min(starts)
@@ -72,13 +80,13 @@ async def run(tool: str, num_calls: int, shared_session: bool):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run concurrent MCP tool calls")
     parser.add_argument("mode", choices=["sync", "async"], help="Tool variant to call")
-    parser.add_argument("--calls", type=int, default=10, help="Number of concurrent calls (default: 10)")
+    parser.add_argument("--calls", type=int, default=10, help="Number of calls (default: 10)")
     parser.add_argument("--session", choices=["unique", "shared"], default="unique", help="Session mode (default: unique)")
+    parser.add_argument("--interval", type=float, default=0, help="Delay in seconds between each call (default: 0, all concurrent)")
     args = parser.parse_args()
 
     tool = "add_numbers_sync" if args.mode == "sync" else "add_numbers_async"
-    asyncio.run(run(tool, args.calls, shared_session=(args.session == "shared")))
+    asyncio.run(run(tool, args.calls, shared_session=(args.session == "shared"), interval=args.interval))
 
-
-#   python mcp_concurrent_test.py async --calls 20 --session shared
-#   python mcp_concurrent_test.py sync --calls 5 --session shared
+    # python mcp_test.py async --calls 20 --session shared
+    # python mcp_test.py async --calls 10 --interval 2 --session unique
